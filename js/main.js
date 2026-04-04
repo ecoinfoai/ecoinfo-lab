@@ -78,37 +78,74 @@ document.addEventListener('DOMContentLoaded', () => {
             
             let currentIndex = 0;
             const originalLength = originalCards.length;
+            let autoPlayInterval;
 
-            carouselTrack.addEventListener('transitionend', () => {
-                // Once we have slid past the last original card and into the clones,
-                // silently snap back to the very first card position.
-                if (currentIndex >= originalLength) {
-                    carouselTrack.style.transition = 'none';
-                    currentIndex = currentIndex % originalLength; // Reset to 0
-                    
-                    const firstCard = carouselTrack.querySelector('.project-card');
-                    const cardWidth = firstCard.offsetWidth;
-                    const gap = parseInt(window.getComputedStyle(carouselTrack).gap) || 40;
-                    
-                    carouselTrack.style.transform = `translateX(-${currentIndex * (cardWidth + gap)}px)`;
-                    
-                    // Force browser reflow to apply 'transition: none' instantaneously
-                    carouselTrack.offsetHeight; 
-                    
-                    // Remove inline 'transition: none' to re-enable CSS stylesheet transition
-                    carouselTrack.style.transition = '';
-                }
-            });
-
-            setInterval(() => {
+            const updateCarousel = (animate = true) => {
                 const firstCard = carouselTrack.querySelector('.project-card');
                 const cardWidth = firstCard.offsetWidth;
                 const gap = parseInt(window.getComputedStyle(carouselTrack).gap) || 40;
-                
-                // Slide left by one card
-                currentIndex++;
+                carouselTrack.style.transition = animate ? 'transform 0.8s cubic-bezier(0.25, 1, 0.5, 1)' : 'none';
                 carouselTrack.style.transform = `translateX(-${currentIndex * (cardWidth + gap)}px)`;
-            }, 4000); // Switch every 4 seconds
+            };
+
+            const nextSlide = () => {
+                currentIndex++;
+                updateCarousel(true);
+            };
+
+            const prevSlide = () => {
+                if (currentIndex === 0) {
+                    // Silently jump to the cloned end before sliding left
+                    currentIndex = originalLength;
+                    updateCarousel(false);
+                    // Force browser reflow to apply 'none' instantaneously
+                    carouselTrack.offsetHeight;
+                }
+                currentIndex--;
+                updateCarousel(true);
+            };
+
+            carouselTrack.addEventListener('transitionend', () => {
+                // If we slid linearly past the original cards, snap back to the start smoothly
+                if (currentIndex >= originalLength) {
+                    currentIndex = currentIndex % originalLength; // Reset to 0
+                    updateCarousel(false);
+                }
+            });
+
+            const startAutoPlay = () => {
+                autoPlayInterval = setInterval(nextSlide, 4000);
+            };
+
+            const pauseAutoPlay = () => {
+                clearInterval(autoPlayInterval);
+            };
+
+            startAutoPlay();
+
+            // Arrow Interactivity
+            const prevBtn = document.getElementById('prev-project');
+            const nextBtn = document.getElementById('next-project');
+            const carouselContainer = document.getElementById('project-carousel');
+
+            if (prevBtn && nextBtn) {
+                prevBtn.addEventListener('click', () => {
+                    pauseAutoPlay();
+                    prevSlide();
+                    startAutoPlay();
+                });
+                nextBtn.addEventListener('click', () => {
+                    pauseAutoPlay();
+                    nextSlide();
+                    startAutoPlay();
+                });
+            }
+
+            // Pause on hover
+            if (carouselContainer) {
+                carouselContainer.addEventListener('mouseenter', pauseAutoPlay);
+                carouselContainer.addEventListener('mouseleave', startAutoPlay);
+            }
         }
     }
 });

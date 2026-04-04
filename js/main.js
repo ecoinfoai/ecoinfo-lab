@@ -114,7 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             const startAutoPlay = () => {
-                autoPlayInterval = setInterval(nextSlide, 4000);
+                autoPlayInterval = setInterval(nextSlide, 7000); // Increased stay time
             };
 
             const pauseAutoPlay = () => {
